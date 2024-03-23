@@ -1,62 +1,75 @@
+<script setup lang="ts">
+  import AppLayout from '@/layouts/AppLayout.vue'
+  import HomeView from '@/views/HomeView.vue'
+</script>
+
 <template>
   <div class="main__wrapper">
     <div class="main__header">
-      <img src="@/assets/img/logo.svg" width="300" height="47" alt="V!U!E! Pizza" />
+      <img
+        src="@/assets/img/logo.svg"
+        width="300"
+        height="47"
+        alt="V!U!E! Pizza"
+      />
     </div>
     <h1>Добро пожаловать!</h1>
     <p>
       Это проект V!U!E! Pizza для обучения на профессиональном онлайн‑курсе<br />
       <b>«Vue.js для опытных разработчиков».</b>
     </p>
+
+    <AppLayout>
+      <HomeView />
+    </AppLayout>
   </div>
 </template>
 
 <style lang="scss">
-@import "@/assets/scss/app.scss";
-body {
-  justify-content: center;
-  align-items: center;
-}
-.main__wrapper {
-  padding-bottom: 30px;
+  @import '@/assets/scss/app.scss';
+  body {
+    justify-content: center;
+    align-items: center;
+  }
+  .main__wrapper {
+    padding-bottom: 30px;
 
-  background-color: $white;
-  box-shadow: $shadow-light;
+    background-color: $white;
+    box-shadow: $shadow-light;
 
-  h1 {
-    margin-bottom: 0;
-    padding: 0 95px;
+    h1 {
+      margin-bottom: 0;
+      padding: 0 95px;
 
-    text-align: center;
+      text-align: center;
 
-    @include b-s36-h42;
+      @include b-s36-h42;
+    }
+
+    p {
+      padding: 0 95px;
+
+      text-align: center;
+
+      font-size: 20px;
+      line-height: 30px;
+    }
+
+    b {
+      font-size: 1.2em;
+    }
   }
 
-  p {
-    padding: 0 95px;
+  .main__header {
+    margin-bottom: 30px;
+    padding: 20px 0;
 
-    text-align: center;
+    background-color: $green-600;
 
-    font-size: 20px;
-    line-height: 30px;
+    img {
+      display: block;
+
+      margin: 0 auto;
+    }
   }
-
-  b {
-    font-size: 1.2em;
-  }
-}
-
-.main__header {
-  margin-bottom: 30px;
-  padding: 20px 0;
-
-  background-color: $green-600;
-
-  img {
-    display: block;
-
-    margin: 0 auto;
-  }
-}
-
 </style>
