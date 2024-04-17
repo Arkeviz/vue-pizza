@@ -6,21 +6,21 @@
       type: Boolean,
       default: false,
     },
-    transferData: {
+    transferredData: {
       type: Object,
       required: true,
     },
   })
 
   const onDrag = ({ dataTransfer }) => {
-    const data = JSON.stringify(props.dataTransfer)
+    const data = JSON.stringify(props.transferredData)
     dataTransfer.setData(DATA_TRANSFER_PAYLOAD, data)
   }
 </script>
 
 <template>
   <div
-    :draggable="true"
+    :draggable="draggable"
     @dragstart.self="onDrag"
     @dragover.prevent
     @dragenter.prevent
@@ -28,5 +28,3 @@
     <slot />
   </div>
 </template>
-
-<style scoped lang="scss"></style>

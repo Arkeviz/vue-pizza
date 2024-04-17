@@ -3,16 +3,19 @@
 
   const emit = defineEmits(['drop'])
 
-  function onDrop({ dataTransfer }) {
+  const onDrop = ({ dataTransfer }) => {
     if (!dataTransfer) {
       return
     }
 
     const payload = dataTransfer.getData(DATA_TRANSFER_PAYLOAD)
+
     if (!payload) return
 
-    const transferData = JSON.parse(dataTransfer.getData(DATA_TRANSFER_PAYLOAD))
-    emit('drop', transferData)
+    const transferedData = JSON.parse(
+      dataTransfer.getData(DATA_TRANSFER_PAYLOAD),
+    )
+    emit('drop', transferedData)
   }
 </script>
 
@@ -21,5 +24,3 @@
     <slot />
   </div>
 </template>
-
-<style scoped lang="scss"></style>

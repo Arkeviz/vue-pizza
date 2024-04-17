@@ -3,21 +3,72 @@
   import sizesData from '@/mocks/sizes.json'
   import ingredientsData from '@/mocks/ingredients.json'
   import saucesData from '@/mocks/sauces.json'
+  import { computed, reactive } from 'vue'
   import {
     doughMapping,
     sizesMapping,
     ingredientsMapping,
     saucesMapping,
   } from '@/common/helpers/pizzaMapping'
+  import DoughSelector from '@/modules/constructor/components/DoughSelector.vue'
+  import DiameterSelector from '@/modules/constructor/components/DiameterSelector.vue'
+  import SauceSelector from '@/modules/constructor/components/SauсeSelector.vue'
+  import IngredientsSelector from '@/modules/constructor/components/IngredientsSelector.vue'
+  import PizzaConstructor from '@/modules/constructor/components/PizzaConstructor.vue'
 
   const doughTypes = doughData.map(doughMapping)
   const sizes = sizesData.map(sizesMapping)
-  const ingredients = ingredientsData.map(ingredientsMapping)
   const sauces = saucesData.map(saucesMapping)
+  const ingredients = ingredientsData.map(ingredientsMapping)
 
-  const getImage = (image) => {
-    return new URL(`../assets/img/${image}`, import.meta.url).href
+  const defaultIngredients = ingredients.reduce((result, item) => {
+    result[item.value] = 0
+    return result
+  }, {})
+
+  const pizza = reactive({
+    name: '',
+    dough: doughTypes[0].value,
+    size: sizes[0].value,
+    sauce: sauces[0].value,
+    ingredients: defaultIngredients,
+  })
+
+  const pizzaPrice = computed(() => {
+    const {
+      dough: selectedDough,
+      size: selectedSize,
+      sauce: selectedSauce,
+      ingredients: selectedIngredients,
+    } = pizza
+
+    const doughPrice =
+      doughTypes.find((item) => item.value === selectedDough)?.price ?? 0
+
+    const saucePrice =
+      sauces.find((item) => item.value === selectedSauce)?.price ?? 0
+
+    const sizeMultiplier =
+      sizes.find((item) => item.value === selectedSize)?.multiplier ?? 1
+
+    const ingredientsPrice = ingredients
+      .map((item) => selectedIngredients[item.value] * item.price)
+      .reduce((acc, item) => acc + item, 0)
+
+    return (doughPrice + saucePrice + ingredientsPrice) * sizeMultiplier
+  })
+
+  const updateIngredientAmount = (ingredient, count) => {
+    pizza.ingredients[ingredient] = count
   }
+
+  const addIngredient = (ingredient) => {
+    pizza.ingredients[ingredient]++
+  }
+
+  const isSubmitDisabled = computed(() => {
+    return pizza.name.length === 0 || pizzaPrice.value === 0
+  })
 </script>
 
 <template>
@@ -26,54 +77,9 @@
       <div class="content__wrapper">
         <h1 class="title title--big">Конструктор пиццы</h1>
 
-        <div class="content__dough">
-          <div class="sheet">
-            <h2 class="title title--small sheet__title">Выберите тесто</h2>
+        <DoughSelector v-model="pizza.dough" :items="doughTypes" />
 
-            <div class="sheet__content dough">
-              <label
-                v-for="dough in doughTypes"
-                :key="dough?.id"
-                class="dough__input"
-                :class="`dough__input--${dough?.value}`"
-              >
-                <input
-                  type="radio"
-                  name="dough"
-                  :value="dough?.value"
-                  class="visually-hidden"
-                  checked
-                />
-                <img :src="getImage(dough?.image)" :alt="dough?.name" />
-                <b>{{ dough?.name }}</b>
-                <span>{{ dough?.description }}</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="content__diameter">
-          <div class="sheet">
-            <h2 class="title title--small sheet__title">Выберите размер</h2>
-
-            <div class="sheet__content diameter">
-              <label
-                v-for="size in sizes"
-                :key="size?.id"
-                class="diameter__input"
-                :class="`diameter__input--${size?.value}`"
-              >
-                <input
-                  type="radio"
-                  name="diameter"
-                  :value="size?.value"
-                  class="visually-hidden"
-                />
-                <span>{{ size?.name }}</span>
-              </label>
-            </div>
-          </div>
-        </div>
+        <DiameterSelector v-model="pizza.size" :items="sizes" />
 
         <div class="content__ingredients">
           <div class="sheet">
@@ -82,68 +88,13 @@
             </h2>
 
             <div class="sheet__content ingredients">
-              <div class="ingredients__sauce">
-                <p>Основной соус:</p>
+              <SauceSelector v-model="pizza.sauce" :items="sauces" />
 
-                <label
-                  v-for="sauce in sauces"
-                  :key="sauce?.id"
-                  class="radio ingredients__input"
-                >
-                  <input
-                    type="radio"
-                    name="sauce"
-                    :value="sauce?.value"
-                    checked
-                  />
-                  <span>{{ sauce?.name }}</span>
-                </label>
-              </div>
-
-              <div class="ingredients__filling">
-                <p>Начинка:</p>
-
-                <ul class="ingredients__list">
-                  <li
-                    v-for="ingredient in ingredients"
-                    :key="ingredient?.id"
-                    class="ingredients__item"
-                  >
-                    <img
-                      :src="getImage(ingredient?.image)"
-                      :alt="ingredient?.name"
-                    />
-                    <span
-                      class="filling"
-                      :class="`filling--${ingredient?.value}`"
-                    >
-                      {{ ingredient?.name }}
-                    </span>
-
-                    <div class="counter counter--orange ingredients__counter">
-                      <button
-                        type="button"
-                        class="counter__button counter__button--minus"
-                        disabled
-                      >
-                        <span class="visually-hidden">Меньше</span>
-                      </button>
-                      <input
-                        type="text"
-                        name="counter"
-                        class="counter__input"
-                        value="0"
-                      />
-                      <button
-                        type="button"
-                        class="counter__button counter__button--plus"
-                      >
-                        <span class="visually-hidden">Больше</span>
-                      </button>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              <IngredientsSelector
+                :values="pizza.ingredients"
+                :items="ingredients"
+                @update="updateIngredientAmount"
+              />
             </div>
           </div>
         </div>
@@ -152,25 +103,25 @@
           <label class="input">
             <span class="visually-hidden">Название пиццы</span>
             <input
+              v-model="pizza.name"
               type="text"
               name="pizza_name"
               placeholder="Введите название пиццы"
             />
           </label>
 
-          <div class="content__constructor">
-            <div class="pizza pizza--foundation--big-tomato">
-              <div class="pizza__wrapper">
-                <div class="pizza__filling pizza__filling--ananas"></div>
-                <div class="pizza__filling pizza__filling--bacon"></div>
-                <div class="pizza__filling pizza__filling--cheddar"></div>
-              </div>
-            </div>
-          </div>
+          <PizzaConstructor
+            :dough="pizza.dough"
+            :sauce="pizza.sauce"
+            :ingredients="pizza.ingredients"
+            @drop="addIngredient"
+          />
 
           <div class="content__result">
-            <p>Итого: 0 ₽</p>
-            <button type="button" class="button" disabled>Готовьте!</button>
+            <p>Итого: {{ pizzaPrice }}</p>
+            <button type="button" class="button" :disabled="isSubmitDisabled">
+              Готовьте!
+            </button>
           </div>
         </div>
       </div>
@@ -198,19 +149,6 @@
     padding-left: 2vw;
   }
 
-  .content__dough {
-    width: 580px;
-    margin-top: 15px;
-    margin-right: auto;
-    margin-bottom: 15px;
-  }
-
-  .content__diameter {
-    width: 375px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-  }
-
   .content__ingredients {
     width: 580px;
     margin-top: 15px;
@@ -224,17 +162,10 @@
     margin-bottom: 15px;
   }
 
-  .content__constructor {
-    width: 315px;
-    margin-top: 25px;
-    margin-right: auto;
-    margin-left: auto;
-  }
-
   .content__result {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
 
     margin-top: 25px;
 
@@ -276,39 +207,6 @@
     border-top: 1px solid rgba($green-500, 0.1);
   }
 
-  .ingredients__sauce {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-
-    width: 100%;
-    margin-bottom: 14px;
-
-    p {
-      @include r-s16-h19;
-
-      margin-top: 0;
-      margin-right: 16px;
-      margin-bottom: 10px;
-    }
-  }
-
-  .ingredients__input {
-    margin-right: 24px;
-    margin-bottom: 10px;
-  }
-
-  .ingredients__filling {
-    width: 100%;
-
-    p {
-      @include r-s16-h19;
-
-      margin-top: 0;
-      margin-bottom: 16px;
-    }
-  }
-
   .title {
     box-sizing: border-box;
     width: 100%;
@@ -323,37 +221,6 @@
     &--small {
       @include b-s18-h21;
     }
-  }
-
-  .ingredients__list {
-    @include clear-list;
-
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .ingredients__item {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-
-    width: fit-content;
-    min-width: 100px;
-    max-width: 110px;
-    min-height: 40px;
-    margin-right: 17px;
-    margin-bottom: 35px;
-
-    img {
-      width: 25px;
-    }
-  }
-
-  .ingredients__counter {
-    width: 55px;
-    margin-top: 10px;
-    margin-left: 30px;
   }
 
   .radio {
@@ -415,282 +282,6 @@
           }
         }
       }
-    }
-  }
-
-  .counter {
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .counter__button {
-    $el: &;
-    $size_icon: 50%;
-
-    position: relative;
-
-    display: block;
-
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    padding: 0;
-
-    cursor: pointer;
-    transition: 0.3s;
-
-    border: none;
-    border-radius: 50%;
-    outline: none;
-
-    &--minus {
-      background-color: $purple-100;
-
-      &::before {
-        @include p_center-all;
-
-        width: $size_icon;
-        height: 2px;
-
-        content: '';
-
-        border-radius: 2px;
-        background-color: $black;
-      }
-
-      &:hover:not(:active):not(:disabled) {
-        background-color: $purple-200;
-      }
-
-      &:active:not(:disabled) {
-        background-color: $purple-300;
-      }
-
-      &:focus:not(:disabled) {
-        box-shadow: $shadow-regular;
-      }
-
-      &:disabled {
-        cursor: default;
-
-        &::before {
-          opacity: 0.1;
-        }
-      }
-    }
-
-    &--plus {
-      background-color: $green-500;
-
-      &::before {
-        @include p_center-all;
-
-        width: $size_icon;
-        height: 2px;
-
-        content: '';
-
-        border-radius: 2px;
-        background-color: $white;
-      }
-
-      &::after {
-        @include p_center-all;
-
-        width: $size_icon;
-        height: 2px;
-
-        content: '';
-        transform: translate(-50%, -50%) rotate(90deg);
-
-        border-radius: 2px;
-        background-color: $white;
-      }
-
-      &:hover:not(:active):not(:disabled) {
-        background-color: $green-400;
-      }
-
-      &:active:not(:disabled) {
-        background-color: $green-600;
-      }
-
-      &:focus:not(:disabled) {
-        box-shadow: $shadow-regular;
-      }
-
-      &:disabled {
-        cursor: default;
-
-        opacity: 0.3;
-      }
-    }
-
-    &--orange {
-      background-color: $orange-200;
-
-      &:hover:not(:active):not(:disabled) {
-        background-color: $orange-100;
-      }
-
-      &:active:not(:disabled) {
-        background-color: $orange-300;
-      }
-    }
-  }
-
-  .counter__input {
-    @include r-s14-h16;
-
-    box-sizing: border-box;
-    width: 22px;
-    margin: 0;
-
-    text-align: center;
-
-    color: $black;
-    border: none;
-    border-radius: 10px;
-    outline: none;
-    background-color: transparent;
-
-    &:focus {
-      box-shadow: inset $shadow-regular;
-    }
-  }
-
-  .dough__input {
-    position: relative;
-
-    cursor: pointer;
-
-    margin-right: 8%;
-    margin-bottom: 20px;
-    padding-left: 50px;
-
-    img {
-      @include p_center-v;
-
-      width: 36px;
-      height: 36px;
-
-      transition: 0.3s;
-
-      border-radius: 50%;
-    }
-
-    b {
-      @include r-s16-h19;
-    }
-
-    span {
-      @include l-s11-h13;
-
-      display: block;
-    }
-
-    &:hover {
-      img {
-        box-shadow: $shadow-regular;
-      }
-    }
-
-    input {
-      &:checked + img {
-        box-shadow: $shadow-large;
-      }
-    }
-  }
-
-  .diameter__input {
-    margin-right: 10%;
-    margin-bottom: 20px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-
-    cursor: pointer;
-
-    span {
-      @include r-s16-h19;
-
-      position: relative;
-
-      padding-left: 44px;
-
-      &::before {
-        @include p_center_v;
-
-        width: 36px;
-        height: 36px;
-
-        content: '';
-        transition: 0.3s;
-
-        border-radius: 50%;
-        background-color: $green-100;
-        background-image: url('@/assets/img/diameter.svg');
-        background-repeat: no-repeat;
-        background-position: center;
-      }
-    }
-
-    &:nth-child(3n) {
-      margin-right: 0;
-    }
-
-    &--small {
-      span::before {
-        background-size: 36px;
-      }
-    }
-
-    &--normal {
-      span::before {
-        background-size: 36px;
-      }
-    }
-
-    &--big {
-      span::before {
-        background-size: 100%;
-      }
-    }
-
-    &:hover {
-      span::before {
-        box-shadow: $shadow-regular;
-      }
-    }
-
-    input {
-      &:checked + span::before {
-        box-shadow: $shadow-large;
-      }
-    }
-  }
-
-  .filling {
-    @include r-s14-h16;
-
-    position: relative;
-    display: block;
-
-    padding-left: 5px;
-
-    img {
-      @include p_center-v;
-
-      display: block;
-
-      width: 32px;
-      height: 32px;
-
-      box-sizing: border-box;
-      padding: 4px;
-
-      border-radius: 50%;
     }
   }
 
@@ -797,184 +388,6 @@
     &--white {
       background-color: $white;
       color: $green-500;
-    }
-  }
-
-  .pizza {
-    position: relative;
-
-    display: block;
-
-    box-sizing: border-box;
-    width: 100%;
-
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 100%;
-
-    &--foundation--big-creamy {
-      background-image: url('@/assets/img/foundation/big-creamy.svg');
-    }
-
-    &--foundation--big-tomato {
-      background-image: url('@/assets/img/foundation/big-tomato.svg');
-    }
-
-    &--foundation--small-creamy {
-      background-image: url('@/assets/img/foundation/small-creamy.svg');
-    }
-
-    &--foundation--small-tomato {
-      background-image: url('@/assets/img/foundation/small-tomato.svg');
-    }
-  }
-
-  .pizza__wrapper {
-    width: 100%;
-    padding-bottom: 100%;
-  }
-
-  .pizza__filling {
-    $bl: &;
-    position: absolute;
-    top: 0;
-    left: 0;
-
-    display: block;
-
-    width: 100%;
-    height: 100%;
-
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 100%;
-
-    &::before,
-    &::after {
-      display: none;
-
-      position: absolute;
-      top: 0;
-      left: 0;
-
-      width: 100%;
-      height: 100%;
-
-      content: '';
-
-      background-image: inherit;
-    }
-
-    &--second {
-      &::before {
-        display: block;
-
-        transform: rotate(45deg);
-      }
-    }
-
-    &--third {
-      &::before {
-        display: block;
-
-        transform: rotate(45deg);
-      }
-
-      &::after {
-        display: block;
-
-        transform: rotate(-45deg);
-      }
-    }
-
-    &--ananas,
-    &--ananas.pizza__filling--second::before,
-    &--ananas.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/ananas.svg');
-    }
-
-    &--bacon,
-    &--bacon.pizza__filling--second::before,
-    &--bacon.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/bacon.svg');
-    }
-
-    &--blue_cheese,
-    &--blue.pizza__filling--second::before,
-    &--blue.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/blue_cheese.svg');
-    }
-
-    &--cheddar,
-    &--cheddar.pizza__filling--second::before,
-    &--cheddar.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/cheddar.svg');
-    }
-
-    &--chile,
-    &--chile.pizza__filling--second::before,
-    &--chile.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/chile.svg');
-    }
-
-    &--ham,
-    &--ham.pizza__filling--second::before,
-    &--ham.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/ham.svg');
-    }
-
-    &--jalapeno,
-    &--jalapeno.pizza__filling--second::before,
-    &--jalapeno.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/jalapeno.svg');
-    }
-
-    &--mozzarella,
-    &--mozzarella.pizza__filling--second::before,
-    &--mozzarella.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/mozzarella.svg');
-    }
-
-    &--mushrooms,
-    &--mushrooms.pizza__filling--second::before,
-    &--mushrooms.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/mushrooms.svg');
-    }
-
-    &--olives,
-    &--olives.pizza__filling--second::before,
-    &--olives.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/olives.svg');
-    }
-
-    &--onion,
-    &--onion.pizza__filling--second::before,
-    &--onion.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/onion.svg');
-    }
-
-    &--parmesan,
-    &--parmesan.pizza__filling--second::before,
-    &--parmesan.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/parmesan.svg');
-    }
-
-    &--salami,
-    &---salami.pizza__filling--second::before,
-    &---salami.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/salami.svg');
-    }
-
-    &--salmon,
-    &--salmon.pizza__filling--second::before,
-    &--salmon.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/salmon.svg');
-    }
-
-    &--tomatoes,
-    &--tomatoes.pizza__filling--second::before,
-    &--tomatoes.pizza__filling--third::after {
-      background-image: url('@/assets/img/filling-big/tomatoes.svg');
     }
   }
 
