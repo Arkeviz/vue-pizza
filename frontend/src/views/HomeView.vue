@@ -12,7 +12,7 @@
   } from '@/common/helpers/pizzaMapping'
   import DoughSelector from '@/modules/constructor/components/DoughSelector.vue'
   import DiameterSelector from '@/modules/constructor/components/DiameterSelector.vue'
-  import SauceSelector from '@/modules/constructor/components/SauсeSelector.vue'
+  import SauceSelector from '@/modules/constructor/components/SauceSelector.vue'
   import IngredientsSelector from '@/modules/constructor/components/IngredientsSelector.vue'
   import PizzaConstructor from '@/modules/constructor/components/PizzaConstructor.vue'
 
