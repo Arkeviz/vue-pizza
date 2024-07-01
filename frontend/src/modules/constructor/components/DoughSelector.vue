@@ -4,8 +4,8 @@
 
   const props = defineProps({
     modelValue: {
-      type: String,
-      default: '',
+      type: Number,
+      required: true,
     },
     items: {
       type: Array,
@@ -32,10 +32,12 @@
             v-model="currentDough"
             name="dough"
             type="radio"
-            :value="doughType?.value"
+            :value="doughType?.id"
+            :checked="doughType?.id === modelValue"
             class="visually-hidden"
           />
           <img :src="getImage(doughType?.image)" :alt="doughType?.name" />
+
           <b>{{ doughType?.name }}</b>
           <span>{{ doughType?.description }}</span>
         </label>

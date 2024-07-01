@@ -3,8 +3,8 @@
 
   const props = defineProps({
     modelValue: {
-      type: String,
-      default: '',
+      type: Number,
+      required: true,
     },
     items: {
       type: Array,
@@ -25,13 +25,14 @@
           v-for="size in items"
           :key="size?.id"
           class="diameter__input"
-          :class="`diameter__input--${size?.value}`"
+          :class="`diameter__input--${size?.id}`"
         >
           <input
             v-model="currentSize"
             type="radio"
             name="diameter"
-            :value="size?.value"
+            :value="size?.id"
+            :checked="size?.id === modelValue"
             class="visually-hidden"
           />
           <span>{{ size?.name }}</span>

@@ -21,34 +21,21 @@
 
   const TWO_INGREDIENTS = 2
   const THREE_INGREDIENTS = 3
-
-  // Ингредиенты, кол-во которых > 0
-  const computedIngredients = computed(() =>
-    Object.entries(props.ingredients).reduce((result, entry) => {
-      const [key, value] = entry
-
-      if (value > 0) {
-        result[key] = value
-      }
-
-      return result
-    }, {}),
-  )
 </script>
 
 <template>
   <div class="content__constructor">
-    <AppDrop @drop="(event) => emit('drop', event.value)">
+    <AppDrop @drop="emit('drop', $event.id)">
       <div class="pizza" :class="`pizza--foundation--${dough}-${sauce}`">
         <div class="pizza__wrapper">
           <div
-            v-for="(value, key) in computedIngredients"
-            :key="key"
+            v-for="item in props.ingredients"
+            :key="item.id"
             class="pizza__filling"
             :class="[
-              `pizza__filling--${key}`,
-              value === TWO_INGREDIENTS && 'pizza__filling--second',
-              value === THREE_INGREDIENTS && 'pizza__filling--third',
+              `pizza__filling--${item.value}`,
+              item.quantity === TWO_INGREDIENTS && 'pizza__filling--second',
+              item.quantity === THREE_INGREDIENTS && 'pizza__filling--third',
             ]"
           />
         </div>

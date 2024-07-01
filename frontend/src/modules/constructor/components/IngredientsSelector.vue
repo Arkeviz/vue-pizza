@@ -3,6 +3,7 @@
   import { MAX_INGREDIENT_COUNT } from '@/common/constants'
   import { getImage } from '@/common/helpers/getImage'
   import AppDrag from '@/common/components/AppDrag.vue'
+  import AppCounter from '@/common/components/AppCounter.vue'
 
   const props = defineProps({
     values: {
@@ -17,18 +18,8 @@
 
   const emit = defineEmits(['update'])
 
-  const values = toRef(props, 'values')
-
-  const getValue = (ingredient) => values.value[ingredient] ?? 0
-
   const setValue = (ingredient, count) =>
     emit('update', ingredient, Number(count))
-
-  const incrementValue = (ingredient) =>
-    setValue(ingredient, getValue(ingredient) + 1)
-
-  const decrementValue = (ingredient) =>
-    setValue(ingredient, getValue(ingredient) - 1)
 
   const inputValue = (ingredient, count) =>
     setValue(ingredient, Math.min(MAX_INGREDIENT_COUNT, Number(count)))
@@ -46,7 +37,7 @@
       >
         <AppDrag
           :transferred-data="ingredient"
-          :draggable="getValue(ingredient.value) < MAX_INGREDIENT_COUNT"
+          :draggable="props.values[ingredient.id] < MAX_INGREDIENT_COUNT"
           class="ingredients__item--container"
         >
           <img :src="getImage(ingredient?.image)" :alt="ingredient?.name" />
@@ -55,31 +46,13 @@
           </span>
         </AppDrag>
 
-        <div class="counter ingredients__counter">
-          <button
-            type="button"
-            class="counter__button counter__button--minus"
-            :disabled="getValue(ingredient.value) === 0"
-            @click="decrementValue(ingredient.value)"
-          >
-            <span class="visually-hidden">Меньше</span>
-          </button>
-          <input
-            type="text"
-            name="counter"
-            class="counter__input"
-            :value="getValue(ingredient.value)"
-            @input="(event) => inputValue(ingredient.value, event.target.value)"
-          />
-          <button
-            type="button"
-            class="counter__button counter__button--plus"
-            :disabled="getValue(ingredient.value) === MAX_INGREDIENT_COUNT"
-            @click="incrementValue(ingredient.value)"
-          >
-            <span class="visually-hidden">Больше</span>
-          </button>
-        </div>
+        <AppCounter
+          class="ingredients__counter"
+          :value="props.values[ingredient.id]"
+          :min="0"
+          :max="MAX_INGREDIENT_COUNT"
+          @input="inputValue(ingredient.id, $event)"
+        />
       </li>
     </ul>
   </div>

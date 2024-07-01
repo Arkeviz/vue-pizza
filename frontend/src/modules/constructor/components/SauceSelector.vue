@@ -3,8 +3,8 @@
 
   const props = defineProps({
     modelValue: {
-      type: String,
-      default: '',
+      type: Number,
+      required: true,
     },
     items: {
       type: Array,
@@ -28,7 +28,8 @@
         v-model="currentSauce"
         type="radio"
         name="sauce"
-        :value="sauce?.value"
+        :value="sauce?.id"
+        :checked="sauce?.id === modelValue"
       />
       <span>{{ sauce?.name }}</span>
     </label>

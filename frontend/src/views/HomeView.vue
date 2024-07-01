@@ -3,7 +3,11 @@
   import sizesData from '@/mocks/sizes.json'
   import ingredientsData from '@/mocks/ingredients.json'
   import saucesData from '@/mocks/sauces.json'
-  import { computed, reactive } from 'vue'
+  import { computed, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { useDataStore } from '@/stores/data'
+  import { usePizzaStore } from '@/stores/pizza'
+  import { useCartStore } from '@/stores/cart'
   import {
     doughMapping,
     sizesMapping,
@@ -16,58 +20,71 @@
   import IngredientsSelector from '@/modules/constructor/components/IngredientsSelector.vue'
   import PizzaConstructor from '@/modules/constructor/components/PizzaConstructor.vue'
 
-  const doughTypes = doughData.map(doughMapping)
-  const sizes = sizesData.map(sizesMapping)
-  const sauces = saucesData.map(saucesMapping)
-  const ingredients = ingredientsData.map(ingredientsMapping)
+  const dataStore = useDataStore()
+  const pizzaStore = usePizzaStore()
+  const cartStore = useCartStore()
 
-  const defaultIngredients = ingredients.reduce((result, item) => {
-    result[item.value] = 0
-    return result
-  }, {})
+  const router = useRouter()
 
-  const pizza = reactive({
-    name: '',
-    dough: doughTypes[0].value,
-    size: sizes[0].value,
-    sauce: sauces[0].value,
-    ingredients: defaultIngredients,
+  const name = computed({
+    get() {
+      return pizzaStore.name
+    },
+    set(value) {
+      pizzaStore.setName(value)
+    },
   })
 
-  const pizzaPrice = computed(() => {
-    const {
-      dough: selectedDough,
-      size: selectedSize,
-      sauce: selectedSauce,
-      ingredients: selectedIngredients,
-    } = pizza
-
-    const doughPrice =
-      doughTypes.find((item) => item.value === selectedDough)?.price ?? 0
-
-    const saucePrice =
-      sauces.find((item) => item.value === selectedSauce)?.price ?? 0
-
-    const sizeMultiplier =
-      sizes.find((item) => item.value === selectedSize)?.multiplier ?? 1
-
-    const ingredientsPrice = ingredients
-      .map((item) => selectedIngredients[item.value] * item.price)
-      .reduce((acc, item) => acc + item, 0)
-
-    return (doughPrice + saucePrice + ingredientsPrice) * sizeMultiplier
+  const doughId = computed({
+    get() {
+      return pizzaStore.doughId
+    },
+    set(value) {
+      pizzaStore.setDough(value)
+    },
   })
 
-  const updateIngredientAmount = (ingredient, count) => {
-    pizza.ingredients[ingredient] = count
+  const sizeId = computed({
+    get() {
+      return pizzaStore.sizeId
+    },
+    set(value) {
+      pizzaStore.setSize(value)
+    },
+  })
+
+  const sauceId = computed({
+    get() {
+      return pizzaStore.sauceId
+    },
+    set(value) {
+      pizzaStore.setSauce(value)
+    },
+  })
+
+  const addToCart = async () => {
+    cartStore.savePizza(pizzaStore.$state)
+    await router.push({ name: 'cart' })
+    resetPizza()
   }
 
-  const addIngredient = (ingredient) => {
-    pizza.ingredients[ingredient]++
+  const resetPizza = () => {
+    pizzaStore.setName('')
+    pizzaStore.setDough(dataStore.doughs[0].id)
+    pizzaStore.setSize(dataStore.sizes[0].id)
+    pizzaStore.setSauce(dataStore.sauces[0].id)
+    pizzaStore.setIngredients([])
+    pizzaStore.setIndex(null)
   }
 
   const isSubmitDisabled = computed(() => {
-    return pizza.name.length === 0 || pizzaPrice.value === 0
+    return name.value.length === 0 || pizzaStore.price === 0
+  })
+
+  onMounted(() => {
+    if (pizzaStore.index === null) {
+      resetPizza()
+    }
   })
 </script>
 
@@ -77,9 +94,9 @@
       <div class="content__wrapper">
         <h1 class="title title--big">Конструктор пиццы</h1>
 
-        <DoughSelector v-model="pizza.dough" :items="doughTypes" />
+        <DoughSelector v-model="doughId" :items="dataStore.doughs" />
 
-        <DiameterSelector v-model="pizza.size" :items="sizes" />
+        <DiameterSelector v-model="sizeId" :items="dataStore.sizes" />
 
         <div class="content__ingredients">
           <div class="sheet">
@@ -88,12 +105,12 @@
             </h2>
 
             <div class="sheet__content ingredients">
-              <SauceSelector v-model="pizza.sauce" :items="sauces" />
+              <SauceSelector v-model="sauceId" :items="dataStore.sauces" />
 
               <IngredientsSelector
-                :values="pizza.ingredients"
-                :items="ingredients"
-                @update="updateIngredientAmount"
+                :values="pizzaStore.ingredientQuantities"
+                :items="dataStore.ingredients"
+                @update="pizzaStore.setIngredientQuantity"
               />
             </div>
           </div>
@@ -103,7 +120,7 @@
           <label class="input">
             <span class="visually-hidden">Название пиццы</span>
             <input
-              v-model="pizza.name"
+              v-model="name"
               type="text"
               name="pizza_name"
               placeholder="Введите название пиццы"
@@ -111,15 +128,20 @@
           </label>
 
           <PizzaConstructor
-            :dough="pizza.dough"
-            :sauce="pizza.sauce"
-            :ingredients="pizza.ingredients"
-            @drop="addIngredient"
+            :dough="pizzaStore.dough.value"
+            :sauce="pizzaStore.sauce.value"
+            :ingredients="pizzaStore.ingredientsExtended"
+            @drop="pizzaStore.incrementIngredientQuantity"
           />
 
           <div class="content__result">
-            <p>Итого: {{ pizzaPrice }}</p>
-            <button type="button" class="button" :disabled="isSubmitDisabled">
+            <p>Итого: {{ pizzaStore.price }} ₽</p>
+            <button
+              type="button"
+              class="button"
+              :disabled="isSubmitDisabled"
+              @click="addToCart"
+            >
               Готовьте!
             </button>
           </div>
